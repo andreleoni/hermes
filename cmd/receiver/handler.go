@@ -1,15 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
-	"hermes/internal/storage"
+	"hermes/internal/queue"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
 func main() {
-	storage.SetupQueue()
+	queue.Setup()
 
 	router := mux.NewRouter()
 
@@ -27,10 +29,15 @@ func ReceiverHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	fmt.Println("Params: ", vars)
+	defer r.Body.Close()
+	body, _ := ioutil.ReadAll(r.Body)
+	stringBody := bytes.NewBuffer(body).String()
 
-	fmt.Println("Reading test: ", storage.QueueRead(vars["queue"]))
-	fmt.Println("Write test: ", storage.QueueWrite(vars["queue"], "teste"))
+	fmt.Println("Request params: ", vars, "Body: ", stringBody)
 
-	fmt.Fprintf(w, "Queue", vars["queue"])
+	// fmt.Println("Reading test: ", queue.Read(vars["queue"]))
+
+	fmt.Println("Writing on queue test: ", queue.Enqueue(vars["queue"], stringBody))
+
+	fmt.Fprintf(w, "OK")
 }
